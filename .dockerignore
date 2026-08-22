@@ -1,0 +1,12 @@
+.venv
+ingestion/dbt_project/.venv
+ingestion/dbt_project/target
+ingestion/dbt_project/logs
+ingestion/bronze_silver_gold/raw
+frontend/node_modules
+frontend/.next
+retrieval/bm25/index
+.git
+.pytest_cache
+tests
+**/__pycache__

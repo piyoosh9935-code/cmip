@@ -56,44 +56,70 @@ services:
     # --artifacts-destination (not --default-artifact-root): the client logging
     # artifacts runs on the host, not inside this container, so artifact URIs must use
     # MLflow's proxied "mlflow-artifacts:/" scheme (routed through this server's HTTP
-    # API) rather than a literal filesystem path the client can't actually reach - see
-    # CHALLENGES.md.
+    # API) rather than a literal filesystem path the client can't actually reach.
+    # --allowed-hosts: MLflow 3.x's Host-header allowlist (a *separate* security layer
+    # from --host, which only controls network binding) defaults to localhost/private
+    # IPs - a request from the fastapi container arrives with "Host: mlflow:5000" (the
+    # Docker Compose service DNS name), which isn't a private IP and gets rejected as
+    # a possible DNS-rebinding attack without explicitly allowing it. See CHALLENGES.md.
     command: >
       mlflow server
       --host 0.0.0.0
+      --allowed-hosts localhost,127.0.0.1,localhost:5001,127.0.0.1:5001,mlflow,mlflow:5000
       --backend-store-uri sqlite:///mlflow.db
       --artifacts-destination /mlflow
 
-  # fastapi:
-  #   build: ./api
-  #   container_name: cmip_fastapi
-  #   restart: always
-  #   ports:
-  #     - "8000:8000"
-  #   depends_on:
-  #     - postgres
-  #     - qdrant
-  #   environment:
-  #     DATABASE_URL: postgres://cmip:cmip123@postgres:5432/cmip
-  #     QDRANT_URL: http://qdrant:6333
+  mcp:
+    build:
+      context: .
+      dockerfile: docker/fastapi/Dockerfile
+    container_name: cmip_mcp
+    restart: always
+    command: ["python", "-m", "mcp_server.server"]
+    ports:
+      - "8100:8100"
+    environment:
+      MCP_HOST: 0.0.0.0
+      MCP_PORT: "8100"
+      DATABASE_URL: postgresql://cmip:cmip123@postgres:5432/cmip
+      QDRANT_URL: http://qdrant:6333
+    depends_on:
+      postgres:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
 
-  minio:
-    image: minio/minio
-    container_name: cmip_minio
+  fastapi:
+    build:
+      context: .
+      dockerfile: docker/fastapi/Dockerfile
+    container_name: cmip_fastapi
     restart: always
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "8000:8000"
     environment:
-      MINIO_ROOT_USER: cmip
-      MINIO_ROOT_PASSWORD: cmip123
-    command: server /data --console-address ":9001"
-    volumes:
-      - minio_data:/data
+      DATABASE_URL: postgresql://cmip:cmip123@postgres:5432/cmip
+      QDRANT_URL: http://qdrant:6333
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      MCP_SERVER_URL: http://mcp:8100/mcp
+      # Ollama runs natively on the host, not in this compose stack - reachable from
+      # inside a container via Docker Desktop's host.docker.internal.
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+      CORS_ALLOW_ORIGINS: http://localhost:3000
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+      mlflow:
+        condition: service_started
+      mcp:
+        condition: service_started
 
 volumes:
   postgres_data:
   qdrant_data:
   mlflow_data:
-  minio_data:
 

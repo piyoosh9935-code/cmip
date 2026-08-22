@@ -8,7 +8,8 @@ LangGraph, Qdrant, MCP, and local Ollama models.
 > (`ingestion/synthetic_data_gen/`), seeded and offline — no real patient data of any
 > kind is used, stored, or downloaded.
 
-**Build status**: in progress, built phase by phase. See the phase table below.
+**Build status**: all 8 phases complete, built and verified phase by phase. See the
+phase table below and [CHALLENGES.md](./CHALLENGES.md) for the full build narrative.
 
 ## Project Overview
 
@@ -176,6 +177,20 @@ to FastAPI directly via absolute URLs (`NEXT_PUBLIC_API_BASE_URL`, default
 config - simpler to reason about across both server and client components than
 getting a rewrite proxy correct in both contexts.
 
+## Docker Compose
+
+Six containers: `postgres` (pgvector), `adminer`, `qdrant`, `mlflow`, `mcp`, and
+`fastapi` - the last two share one image (`docker/fastapi/Dockerfile`, CPU-only
+PyTorch explicitly, not the ~4GB-heavier CUDA build a plain `pip install` would
+otherwise resolve on Linux) and both run a startup entrypoint that rebuilds the BM25
+index from Postgres before starting their actual service. Ollama stays native on the
+host (reached via `host.docker.internal`) since it already has locally-pulled models;
+the frontend runs via `npm run dev` for fast iteration rather than being containerized.
+No `minio` - MLflow's own artifact-serving proxy (`--artifacts-destination`) already
+solves cross-host artifact logging without needing an S3-compatible store, and nothing
+else here needs object storage; see CHALLENGES.md for why it was dropped rather than
+wired up per the original plan.
+
 ## Local Development Setup
 
 **Prerequisites**: Docker + Compose, Python 3.12, Node ≥20.9 (current Next.js requires
@@ -195,8 +210,10 @@ cd ingestion/dbt_project && python3.12 -m venv .venv && .venv/bin/pip install -r
 ollama pull llama3
 ollama pull mistral
 
-# 4. Infra
-docker compose up -d
+# 4. Infra — postgres/adminer/qdrant/mlflow only. NOT `docker compose up -d` for
+#    everything yet: fastapi/mcp build their BM25 index from Postgres at container
+#    startup (see CHALLENGES.md), so they need to come up *after* step 6, not before.
+docker compose up -d postgres adminer qdrant mlflow
 
 # 5. Synthetic data → dbt Bronze/Silver/Gold
 make data
@@ -206,15 +223,17 @@ make dbt-run
 make ingest-qdrant
 make ingest-bm25
 
-# 7. MCP server (separate terminal - used by the agentic router path)
-make mcp-server
+# 7. fastapi + mcp (now that Postgres/Qdrant actually have data)
+docker compose up -d mcp fastapi
 
-# 8. API
-make api
-
-# 9. Frontend (needs Node >=20.9 - see Prerequisites above)
+# 8. Frontend (needs Node >=20.9 - see Prerequisites above)
 cd frontend && npm install && npm run dev
 ```
+
+Steps 4-7 are the containerized path. For faster local iteration on the Python code
+itself, `make mcp-server` / `make api` run the same services natively instead (against
+`localhost` ports rather than the Docker network) - useful since a code change needs a
+container rebuild otherwise.
 
 ## Example Query
 
@@ -249,7 +268,7 @@ behind it, not just a "what."
 | 5 | MLflow logging + eval set (heuristic routing itself was pulled forward into Phase 3 - `query_analysis` needed it) | ✅ done |
 | 6 | FastAPI service | ✅ done |
 | 7 | Next.js Member 360 frontend | ✅ done |
-| 8 | Full Docker Compose integration + e2e test | ⏳ next |
+| 8 | Full Docker Compose integration + e2e test | ✅ done |
 
 ## Notes on Tooling Versions
 

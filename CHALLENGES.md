@@ -356,4 +356,76 @@ run (routed to mistral, weights shifting) render correctly in the trace panel.
 
 ---
 
-*(Phase 8 onward will be appended here as it's built.)*
+## Phase 8 — Full Docker Compose Integration + End-to-End Test
+
+**`pip install` on Linux defaults to the CUDA build of PyTorch even when nothing will
+ever use a GPU.** The first `docker compose build` for the shared fastapi/mcp image
+came out to 5.95GB - `sentence-transformers` pulls in `torch`, and a plain `pip
+install -r requirements.txt` on a Linux container resolves the CUDA-enabled wheel by
+default, dragging in several GB of `nvidia-*` packages that a Docker Desktop container
+(no GPU passthrough) will never touch; this container only ever does CPU inference for
+the small MiniLM embedding model. **Fix**: install `torch` explicitly from PyTorch's
+CPU-only wheel index (`--index-url https://download.pytorch.org/whl/cpu`) *before*
+`pip install -r requirements.txt`, so the CPU build already satisfies the dependency
+by the time `sentence-transformers` would otherwise pull the CUDA one in. Cut the
+image from 5.95GB to 1.93GB and the build from ~243s to ~67s - worth doing given this
+project already hit a full Docker Desktop disk once this session.
+
+**The BM25 index is a client-side pickle file, not something that lives in Postgres -
+it never made it into the container image at all.** `retrieval/bm25/index/` is
+gitignored *and* dockerignored (correctly - it's a generated artifact, not source), so
+the first real `/query` call against the freshly-built containers failed immediately
+with `FileNotFoundError: BM25 index not found`. Qdrant didn't have this problem
+(its data lives server-side in the qdrant container's own volume, so whichever client
+originally ran `make ingest-qdrant` doesn't matter), but BM25's pickle is purely
+local to whatever process built it - the host, in this case, invisible to a separate
+container's filesystem. **Fix**: added `docker/fastapi/entrypoint.sh`, which runs
+`python -m retrieval.bm25.build_index` against Postgres before starting the actual
+service (`uvicorn` for fastapi, `mcp_server.server` for mcp) - both services share the
+same entrypoint since both need the index (mcp's `bm25_tool`, fastapi's LangGraph
+agent). This makes `docker compose up` self-sufficient (no host bind-mount required)
+as long as Postgres already has gold-layer data by the time the containers start,
+which is true given the documented setup order (ingestion/dbt happen first).
+
+**MLflow's Host-header allowlist is a *separate* security layer from `--host`, and
+rejected requests from inside the Docker network.** Even after the Phase 5 fix
+(`--host 0.0.0.0` for binding), the first containerized `/query` call succeeded at
+computing the actual answer but then crashed persisting it: `mlflow.exceptions.
+MlflowException: ... 403 ... 'Invalid Host header - possible DNS rebinding attack
+detected'`. MLflow 3.x's `--allowed-hosts` allowlist defaults to localhost + private
+IPs, which doesn't include Docker Compose's internal service DNS name (`mlflow`) -
+different concern from network binding. **Fix**: added `--allowed-hosts` explicitly.
+First attempt (`localhost,127.0.0.1,mlflow`) still rejected the host-side `make eval`
+script's `localhost:5001` request, because setting `--allowed-hosts` at all *replaces*
+the sensible default (which evidently matched port-suffixed forms) with a literal list
+that apparently does exact/pattern matching including the port - had to add
+`localhost:5001` and `mlflow:5000` explicitly alongside the bare hostnames to cover
+every way this server actually gets addressed (host browser/scripts via the mapped
+port, containers via the internal Compose network).
+
+**Decided to drop `minio` rather than wire it up, and documented why instead of
+silently dropping it.** The starter `docker-compose.yml` included minio, and the
+build plan flagged "wire MLflow to minio as its S3 artifact store" as a Phase 8
+decision. But Phase 5's fix (MLflow's own `--artifacts-destination` HTTP proxy) already
+solves the actual problem (a host-side client can't write to a container's local
+filesystem) without needing an object store at all - and nothing else in this
+architecture uses object storage. Adding minio anyway would mean more moving parts
+(bucket creation, credentials, startup ordering) for a problem that's already solved,
+which is exactly the kind of unnecessary complexity worth pushing back on rather than
+building because a checkbox was there. Removed it from `docker-compose.yml` and
+`.env.example` rather than leaving genuinely dead infrastructure in the stack.
+
+**Final verification was black-box, not just re-running the existing test suite.**
+`tests/e2e/test_full_stack.py` hits the containerized FastAPI over real HTTP on
+`localhost:8000` (distinct from `tests/api/`'s in-process `TestClient`, which
+exercises the app code directly but not the actual container networking) - health,
+a full grounded `/query` call with a latency budget, trace persistence, and the
+members endpoint. All 47 tests across the whole project pass together against the
+fully containerized stack (postgres, qdrant, mlflow, mcp, fastapi in Docker; frontend
+via `npm run dev`; Ollama native on the host) - not just individually against
+whichever infra happened to be running at the time each phase was built.
+
+---
+
+*(End of the 8-phase build log. Future work - if any - gets its own dated section
+below this line, not folded into the phase narrative above.)*
