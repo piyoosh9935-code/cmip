@@ -205,6 +205,13 @@ Response includes the answer, citations, groundedness score, retry count, routed
 + reason, and a `trace_id` for `GET /trace/{trace_id}` — the same data the frontend's
 pipeline trace panel renders.
 
+## Challenges, Trade-offs, and Decisions
+
+See [CHALLENGES.md](./CHALLENGES.md) for a running, phase-by-phase log of real problems
+hit during the build, the trade-offs behind non-obvious design choices, and how each
+was resolved — kept specifically so every design decision here has a concrete "why"
+behind it, not just a "what."
+
 ## Build Phases
 
 | # | Phase | Status |
