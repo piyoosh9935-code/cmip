@@ -304,4 +304,56 @@ crashing or hallucinating) and an unknown trace_id (404).
 
 ---
 
-*(Phase 7 onward will be appended here as it's built.)*
+## Phase 7 — Next.js Frontend
+
+**Current Next.js requires Node ≥20.9.0; the machine's system Node was 18.18.0.**
+`npx create-next-app` scaffolded the project but then failed on its post-install
+`next typegen` step with `You are using Node.js 18.18.0. For Next.js, Node.js version
+">=20.9.0" is required.` Installed `node@22` via Homebrew (LTS, actively supported, vs.
+the also-available `node@20` which is deprecated upstream and scheduled for removal in
+~2 months) as a keg-only formula and used it via explicit `PATH` prepending for
+frontend commands specifically - the existing system Node at `/usr/local/bin/node`
+(potentially relied on by other projects on this machine) was left untouched.
+
+**A stale first `npm install` (run under the too-old Node before the fix above)
+corrupted the platform-native dependency resolution in a way a second `npm install`
+alone didn't fix.** `next dev` failed with `Cannot find module
+'@tailwindcss/oxide-darwin-arm64'` - a known class of npm bug where optional
+platform-specific native dependencies don't resolve correctly, often after an
+engine-mismatched install. Deleting `node_modules` and `package-lock.json` and
+reinstalling with Node 22's npm fixed the dependency itself (confirmed present on
+disk afterward), but the *exact same error* persisted on the next `next dev` - because
+Turbopack's `.next/` build cache still referenced the broken pre-fix module graph.
+Clearing `.next/` in addition to reinstalling was what actually fixed it. Lesson
+carried over from the MLflow/Postgres debugging earlier in this project: when a fix
+doesn't take effect, check for a *cache* still holding the old broken state before
+assuming the fix itself is wrong.
+
+**Tailwind v4's CSS-based dark-mode default silently made the UI unreadable.**
+`create-next-app`'s generated `globals.css` follows `prefers-color-scheme: dark` and
+swaps to a dark background automatically - but every component written for this
+project uses light-mode-only Tailwind utility classes (`text-neutral-900`, `bg-white`,
+...) with no `dark:` variants. On a system in dark mode, the result was dark gray text
+on a near-black background - technically rendering, but nearly unreadable, and not
+something a static code review would have caught (the components' JSX is correct
+light-mode markup; the bug was purely in the unrelated CSS file's media query). Caught
+only by actually taking a screenshot of the running page, not by reading the code.
+**Fix**: removed the `prefers-color-scheme: dark` block, documented inline in
+`globals.css` why - full dark-mode support was out of scope for this phase and doing
+it properly means adding `dark:` variants throughout every component, not just
+patching the root CSS variables.
+
+**Verification wasn't "does it compile" - it was an actual browser walkthrough.**
+`npm run build` (production build + TypeScript check) and `npm run lint` both passed
+clean the entire time these three issues existed, because none of them are type or
+lint errors - a missing native binary is a runtime module-resolution failure, and
+unreadable dark-on-dark text is a rendering/CSS issue. All three were only caught by
+opening the app in a real browser and looking at it (and, for the module error,
+reading the actual dev-server error overlay). Verified end-to-end afterward: member
+picker with cohort filtering, navigating into a Member 360 page, asking a question via
+both a suggestion chip and free-text input, and watching a real multi-retry pipeline
+run (routed to mistral, weights shifting) render correctly in the trace panel.
+
+---
+
+*(Phase 8 onward will be appended here as it's built.)*

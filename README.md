@@ -162,9 +162,25 @@ LANGCHAIN_API_KEY=your-key
 
 With neither set, no LangSmith client is initialized and no network call is made.
 
+## Frontend
+
+Next.js (App Router) + TypeScript + Tailwind, in `frontend/`. `/` is the member
+picker (with cohort filter chips); `/members/[memberId]` is the Member 360 view -
+profile, SDoH, medications, claims, encounters, and a persistent `ChatPanel` that
+calls `POST /query` and then `GET /trace/{trace_id}` to render the full
+`PipelineTrace`: routed model, retry count, groundedness score/badge, a color-coded
+per-node log (query_analysis → retrieval → grading → generation → verification, plus
+`prepare_retry`/`mark_low_confidence` when the retry loop fires), and citations. Talks
+to FastAPI directly via absolute URLs (`NEXT_PUBLIC_API_BASE_URL`, default
+`http://localhost:8000`) rather than a rewrite proxy, relying on FastAPI's CORS
+config - simpler to reason about across both server and client components than
+getting a rewrite proxy correct in both contexts.
+
 ## Local Development Setup
 
-**Prerequisites**: Docker + Compose, Python 3.12, Node 18+, [Ollama](https://ollama.com)
+**Prerequisites**: Docker + Compose, Python 3.12, Node ≥20.9 (current Next.js requires
+it - `brew install node@22` if your system Node is older, see CHALLENGES.md),
+[Ollama](https://ollama.com)
 running natively on the host with `llama3` and `mistral` pulled.
 
 ```bash
@@ -196,7 +212,7 @@ make mcp-server
 # 8. API
 make api
 
-# 9. Frontend
+# 9. Frontend (needs Node >=20.9 - see Prerequisites above)
 cd frontend && npm install && npm run dev
 ```
 
@@ -232,8 +248,8 @@ behind it, not just a "what."
 | 4 | MCP server + router agent | ✅ done |
 | 5 | MLflow logging + eval set (heuristic routing itself was pulled forward into Phase 3 - `query_analysis` needed it) | ✅ done |
 | 6 | FastAPI service | ✅ done |
-| 7 | Next.js Member 360 frontend | ⏳ next |
-| 8 | Full Docker Compose integration + e2e test | not started |
+| 7 | Next.js Member 360 frontend | ✅ done |
+| 8 | Full Docker Compose integration + e2e test | ⏳ next |
 
 ## Notes on Tooling Versions
 
