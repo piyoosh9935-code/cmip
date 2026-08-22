@@ -231,8 +231,8 @@ behind it, not just a "what."
 | 3 | LangGraph Self-RAG/Corrective-RAG pipeline | ✅ done |
 | 4 | MCP server + router agent | ✅ done |
 | 5 | MLflow logging + eval set (heuristic routing itself was pulled forward into Phase 3 - `query_analysis` needed it) | ✅ done |
-| 6 | FastAPI service | ⏳ next |
-| 7 | Next.js Member 360 frontend | not started |
+| 6 | FastAPI service | ✅ done |
+| 7 | Next.js Member 360 frontend | ⏳ next |
 | 8 | Full Docker Compose integration + e2e test | not started |
 
 ## Notes on Tooling Versions

@@ -281,6 +281,27 @@ cohorts - strong, but expected, since cohort-scoped questions on cohort-tagged
 synthetic notes is close to retrieval's easiest case; a genuinely adversarial eval set
 (ambiguous or cross-cohort questions) would be a natural next iteration.
 
+## Phase 6 — FastAPI Service
+
+The cleanest phase so far - no new bugs surfaced, which is itself worth noting rather
+than skipping: every endpoint (`/health`, `/members`, `/members/{id}`, `/query`,
+`/trace/{id}`, `/eval/summary`) is a thin wrapper over code already built and
+integration-tested in Phases 1-5 (`retrieval/sql_retriever/templates.py`,
+`agent_graph/state_graph.py`, `llmops/mlflow/experiment.py`), so there was very little
+genuinely new surface area for bugs to hide in. One deliberate design note worth
+stating: `/query`'s route handler is a synchronous `def`, not `async def`, and the
+compiled LangGraph app (`_app = build_graph(get_chat_model)`) is built once at module
+import time and reused across requests rather than rebuilt per call. Starlette runs
+sync path operations in a thread pool, and the actual per-node work is either a
+network call to Ollama/Qdrant/Postgres (I/O-bound, releases the GIL while waiting) or
+cheap local computation - so concurrent requests are not serialized behind a single
+in-process LLM call the way a naive read might suggest. Verified end-to-end with a
+live `curl` against every endpoint (not just the pytest suite) before considering the
+phase done, including the two failure paths that matter most for a healthcare API:
+an unknown member_id (`/members/{id}` returns 404; `/query` degrades to
+`low_confidence: true` with an honest "not enough information" answer rather than
+crashing or hallucinating) and an unknown trace_id (404).
+
 ---
 
-*(Phase 6 onward will be appended here as it's built.)*
+*(Phase 7 onward will be appended here as it's built.)*
