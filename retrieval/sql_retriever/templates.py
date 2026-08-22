@@ -22,7 +22,7 @@ def claims_history(member_id: str, limit: int = 10) -> list[dict]:
     sql = text(
         """
         select claim_id, service_date, diagnosis_desc, procedure_desc, paid_amount,
-               provider_name, provider_specialty
+               provider_id, provider_name, provider_specialty
         from gold.member_claims_fact
         where member_id = :member_id
         order by service_date desc
@@ -71,6 +71,15 @@ def sdoh_profile(member_id: str) -> dict | None:
     )
     with _get_engine().connect() as conn:
         row = conn.execute(sql, {"member_id": member_id}).mappings().first()
+        return dict(row) if row else None
+
+
+def provider_info(provider_id: str) -> dict | None:
+    sql = text(
+        "select provider_id, provider_name, specialty, region from silver.providers where provider_id = :provider_id"
+    )
+    with _get_engine().connect() as conn:
+        row = conn.execute(sql, {"provider_id": provider_id}).mappings().first()
         return dict(row) if row else None
 
 

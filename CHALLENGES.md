@@ -173,6 +173,62 @@ passing through - a small but real example of why structured output from small l
 models needs schema-level guardrails, not just type hints, and a concrete answer to
 "how do you handle small-model reliability" in an interview.
 
+## Phase 4 — MCP Server + Router Agent
+
+**The MCP SDK doesn't serialize a `list[dict]` tool return as one JSON array — it
+splits it into one text block per list item.** Calling `get_member_claims` (which
+returns `list[dict]`) produced a `CallToolResult` with N separate `TextContent` blocks,
+each one JSON object, not one block containing a JSON array. My first client
+implementation joined blocks with `"\n"`, which produces syntactically invalid,
+concatenated JSON for any multi-row result - caught immediately by an integration test
+(`json.decoder.JSONDecodeError: Extra data`). **Fix**: use `result.structured_content`
+instead (present alongside the text blocks, wrapped as `{"result": ...}`), which
+carries the tool's actual return value as real structured data regardless of shape -
+more robust than reconstructing from text blocks, and it's what the SDK generates the
+tool's output schema from in the first place.
+
+**Design tools for what an *agent* needs to chain, not just what a human wants to
+read.** The `claims_history` template originally returned `provider_name` and
+`provider_specialty` but not `provider_id` - fine for a human-readable claim summary,
+but it meant an agent trying to chain "get a claim, then look up that claim's
+provider" had no join key to pass to `get_provider_info`. This only surfaced by
+actually running the agentic path end-to-end and watching a real tool-calling attempt
+fail, not from reading the code. **Fix**: added `provider_id` to the `claims_history`
+query. General lesson: a tool's return schema is part of the *agent's* interface
+contract, not just a human-facing display concern - review it from "what would the
+next tool call need" as well as "is this readable."
+
+**Plain `llama3:latest` on Ollama doesn't support tool-calling at all.** Attempting to
+run the agentic router path with `llama3` failed immediately with `ResponseError:
+registry.ollama.ai/library/llama3:latest does not support tools (status code: 400)` -
+the base Llama 3 chat template Ollama ships predates native function-calling support
+(later variants and other model families do support it; `mistral` does). This is a
+real constraint on the resume's "heuristic routing between Llama and Mistral" design:
+the *deterministic* path (state_graph.py) never calls `.bind_tools()` so it works with
+either model, but the *agentic* MCP path can only ever run on tool-calling-capable
+models - documented here rather than only discovered by a confused user.
+
+**Real, reproducible evidence that small local models are unreliable at genuine
+multi-hop tool chaining - validating a trade-off the plan predicted in advance, not
+just asserting it.** With `mistral` (which does support tool-calling) driving the
+agentic path on "look up this member's most recent claim, then look up the provider
+who submitted it": the model correctly issued the *first* tool call, but for the
+second call passed the literal string `"[provider_id_from_previous_response]"` as the
+`provider_id` argument - a template placeholder, not an extracted value - instead of
+reading the actual id out of the first tool's JSON result. Strengthening the system
+prompt with an explicit "copy the literal value, never a placeholder" instruction was
+tried and made things *worse*: on the next run the model didn't attempt a second tool
+call at all, instead narrating a pseudo-code plan as plain text. This is a known
+failure mode for ~7B instruct models doing ReAct-style orchestration, and it's exactly
+why the router agent's *default* path is the deterministic ensemble-retrieval flow
+(state_graph.py), with the agentic MCP path reserved as an optional, explicitly
+lower-reliability fallback for genuinely multi-hop questions a single retrieval call
+can't answer - not the primary path. The underlying MCP protocol integration itself
+(tool discovery, real streamable-http round trips, LangGraph `create_react_agent`
+wiring) is solid and independently tested; the unreliable part is specifically small
+local models' multi-step reasoning, which is a model-capability limit, not a wiring
+bug - worth being precise about the difference in an interview.
+
 ---
 
-*(Phase 4 onward will be appended here as it's built.)*
+*(Phase 5 onward will be appended here as it's built.)*

@@ -33,6 +33,10 @@ ingest-qdrant:
 ingest-bm25:
 	$(PY) retrieval/bm25/build_index.py
 
+# Phase 4
+mcp-server:
+	$(PY) -m mcp_server.server
+
 # Phase 6
 api:
 	$(PY) -m uvicorn api.fastapi_app:app --reload --port 8000

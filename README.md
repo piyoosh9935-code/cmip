@@ -186,10 +186,13 @@ make dbt-run
 make ingest-qdrant
 make ingest-bm25
 
-# 7. API
+# 7. MCP server (separate terminal - used by the agentic router path)
+make mcp-server
+
+# 8. API
 make api
 
-# 8. Frontend
+# 9. Frontend
 cd frontend && npm install && npm run dev
 ```
 
@@ -222,8 +225,8 @@ behind it, not just a "what."
 | 1 | Synthetic data, dbt Bronze/Silver/Gold, Postgres | ✅ done |
 | 2 | Qdrant + BM25 + ensemble retrieval | ✅ done |
 | 3 | LangGraph Self-RAG/Corrective-RAG pipeline | ✅ done |
-| 4 | MCP server + router agent | ⏳ next |
-| 5 | MLflow logging + eval set (heuristic routing itself was pulled forward into Phase 3 - `query_analysis` needed it) | not started |
+| 4 | MCP server + router agent | ✅ done |
+| 5 | MLflow logging + eval set (heuristic routing itself was pulled forward into Phase 3 - `query_analysis` needed it) | ⏳ next |
 | 6 | FastAPI service | not started |
 | 7 | Next.js Member 360 frontend | not started |
 | 8 | Full Docker Compose integration + e2e test | not started |
