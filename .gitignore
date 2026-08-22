@@ -29,6 +29,9 @@ frontend/out/
 .cache/
 **/__pycache__/
 
+# generated indexes (rebuildable from Postgres via make ingest-qdrant / ingest-bm25)
+retrieval/bm25/index/
+
 # OS
 .DS_Store
 
