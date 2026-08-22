@@ -78,10 +78,12 @@ cmip/
 ├── retrieval/
 │   ├── qdrant/  bm25/  sql_retriever/
 │   └── ensemble_retriever.py
-├── langgraph/
+├── agent_graph/               # LangGraph pipeline (named to avoid shadowing the
+│   │                          # installed `langgraph` package - see CHALLENGES.md)
 │   ├── state.py  state_graph.py  router_agent.py  corrective_rag.py
 │   └── nodes/                # query_analysis, retrieval, grading, generation, verification
-├── mcp/
+├── mcp_server/                # MCP tool server (named to avoid shadowing the
+│   │                          # installed `mcp` SDK package - see CHALLENGES.md)
 │   ├── server.py
 │   └── tools/                # claims, provider, sql, qdrant, bm25
 ├── model_routing/            # heuristic_router.py, ollama_client.py
@@ -219,9 +221,9 @@ behind it, not just a "what."
 | 0 | Scaffolding, dependency pins, venvs | ✅ done |
 | 1 | Synthetic data, dbt Bronze/Silver/Gold, Postgres | ✅ done |
 | 2 | Qdrant + BM25 + ensemble retrieval | ✅ done |
-| 3 | LangGraph Self-RAG/Corrective-RAG pipeline | ⏳ next |
-| 4 | MCP server + router agent | not started |
-| 5 | Model routing + MLflow + eval set | not started |
+| 3 | LangGraph Self-RAG/Corrective-RAG pipeline | ✅ done |
+| 4 | MCP server + router agent | ⏳ next |
+| 5 | MLflow logging + eval set (heuristic routing itself was pulled forward into Phase 3 - `query_analysis` needed it) | not started |
 | 6 | FastAPI service | not started |
 | 7 | Next.js Member 360 frontend | not started |
 | 8 | Full Docker Compose integration + e2e test | not started |

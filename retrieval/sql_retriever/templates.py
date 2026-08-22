@@ -37,7 +37,7 @@ def medication_list(member_id: str, active_only: bool = True) -> list[dict]:
     table = "gold.member_medications_current" if active_only else "silver.ehr_medications"
     sql = text(
         f"""
-        select medication_name, start_date, end_date, status
+        select medication_id, medication_name, start_date, end_date, status
         from {table}
         where member_id = :member_id
         order by start_date desc
