@@ -1,0 +1,15 @@
+# Project-local profile (kept inside the repo, not ~/.dbt/profiles.yml) so `dbt` only
+# ever touches state inside this folder. Invoke with --profiles-dir . (the Makefile
+# targets already do this).
+cmip_dbt:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: "{{ env_var('POSTGRES_HOST', 'localhost') }}"
+      port: "{{ env_var('POSTGRES_PORT', '5432') | int }}"
+      user: "{{ env_var('POSTGRES_USER', 'cmip') }}"
+      password: "{{ env_var('POSTGRES_PASSWORD', 'cmip123') }}"
+      dbname: "{{ env_var('POSTGRES_DB', 'cmip') }}"
+      schema: public
+      threads: 4

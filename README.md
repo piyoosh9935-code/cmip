@@ -210,8 +210,8 @@ pipeline trace panel renders.
 | # | Phase | Status |
 |---|---|---|
 | 0 | Scaffolding, dependency pins, venvs | ✅ done |
-| 1 | Synthetic data, dbt Bronze/Silver/Gold, Postgres | ⏳ next |
-| 2 | Qdrant + BM25 + ensemble retrieval | not started |
+| 1 | Synthetic data, dbt Bronze/Silver/Gold, Postgres | ✅ done |
+| 2 | Qdrant + BM25 + ensemble retrieval | ⏳ next |
 | 3 | LangGraph Self-RAG/Corrective-RAG pipeline | not started |
 | 4 | MCP server + router agent | not started |
 | 5 | Model routing + MLflow + eval set | not started |

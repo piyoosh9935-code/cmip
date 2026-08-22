@@ -1,0 +1,56 @@
+version: 2
+
+models:
+  - name: members
+    columns:
+      - name: member_id
+        tests: [not_null, unique]
+  - name: providers
+    columns:
+      - name: provider_id
+        tests: [not_null, unique]
+  - name: claims
+    columns:
+      - name: claim_id
+        tests: [not_null, unique]
+      - name: member_id
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('members')
+                field: member_id
+  - name: ehr_encounters
+    columns:
+      - name: encounter_id
+        tests: [not_null, unique]
+      - name: member_id
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('members')
+                field: member_id
+  - name: ehr_conditions
+    columns:
+      - name: condition_id
+        tests: [not_null, unique]
+  - name: ehr_medications
+    columns:
+      - name: medication_id
+        tests: [not_null, unique]
+  - name: clinical_notes
+    columns:
+      - name: note_id
+        tests: [not_null, unique]
+      - name: member_id
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('members')
+                field: member_id
+  - name: sdoh
+    columns:
+      - name: member_id
+        tests: [not_null, unique]

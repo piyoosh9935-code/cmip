@@ -18,10 +18,13 @@ data:
 	$(PY) ingestion/synthetic_data_gen/generate.py
 
 dbt-run:
-	cd ingestion/dbt_project && .venv/bin/dbt run
+	cd ingestion/dbt_project && .venv/bin/dbt run --profiles-dir .
 
 dbt-test:
-	cd ingestion/dbt_project && .venv/bin/dbt test
+	cd ingestion/dbt_project && .venv/bin/dbt test --profiles-dir .
+
+load-bronze:
+	$(PY) ingestion/postgres/load_raw_to_bronze.py
 
 # Phase 2
 ingest-qdrant:

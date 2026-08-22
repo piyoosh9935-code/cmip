@@ -2,7 +2,10 @@ version: "3.9"
 
 services:
   postgres:
-    image: postgres:15
+    # was plain postgres:15 with a shared_preload_libraries=pgvector command override -
+    # that image has no pgvector extension so it would fail on startup. Fixed to the
+    # image that actually ships it.
+    image: pgvector/pgvector:pg15
     container_name: cmip_postgres
     restart: always
     environment:
@@ -13,8 +16,12 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    command: >
-      postgres -c shared_preload_libraries=pgvector
+      - ./ingestion/postgres/init_extensions.sql:/docker-entrypoint-initdb.d/01_init_extensions.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cmip -d cmip"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   adminer:
     image: adminer
@@ -23,7 +30,8 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
 
   qdrant:
     image: qdrant/qdrant

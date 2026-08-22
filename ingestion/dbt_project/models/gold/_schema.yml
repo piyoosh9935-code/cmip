@@ -1,0 +1,21 @@
+version: 2
+
+models:
+  - name: member_summary
+    columns:
+      - name: member_id
+        tests: [not_null, unique]
+  - name: member_claims_fact
+    columns:
+      - name: claim_id
+        tests: [not_null, unique]
+  - name: member_notes_index
+    columns:
+      - name: note_id
+        tests: [not_null, unique]
+      - name: member_id
+        tests: [not_null]
+  - name: member_medications_current
+    columns:
+      - name: medication_id
+        tests: [not_null, unique]

@@ -1,0 +1,14 @@
+version: 2
+
+sources:
+  - name: bronze
+    schema: bronze
+    tables:
+      - name: members
+      - name: providers
+      - name: claims
+      - name: ehr_encounters
+      - name: ehr_conditions
+      - name: ehr_medications
+      - name: clinical_notes
+      - name: sdoh
