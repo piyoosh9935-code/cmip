@@ -235,6 +235,26 @@ itself, `make mcp-server` / `make api` run the same services natively instead (a
 `localhost` ports rather than the Docker network) - useful since a code change needs a
 container rebuild otherwise.
 
+### Restarting after a reboot
+
+All 6 containers have `restart: always` and all data (Postgres, Qdrant, MLflow) lives
+in named Docker volumes, so nothing needs to be regenerated - most of this is
+automatic. Two things aren't containerized and need manual restarting:
+
+1. **Docker Desktop** must be running (it won't relaunch itself unless "start on
+   login" is enabled in its settings). Once it's up, `docker compose ps` should show
+   all 6 containers already back up on their own. If not: `docker compose up -d`.
+2. **Ollama** runs natively on the host - check with `ollama list`; open the Ollama
+   app or run `ollama serve` if it's not responding.
+3. **Frontend** runs via `npm run dev`, outside Docker - restart it manually:
+   `cd frontend && npm run dev` (with Node ≥20.9 on `PATH`, e.g.
+   `export PATH="/opt/homebrew/opt/node@22/bin:$PATH"` if the system default is older).
+
+Verify with `curl http://localhost:8000/health`. `fastapi`/`mcp` rebuild their BM25
+index from Postgres on every container start, so if Postgres is still initializing
+when Docker first comes back up, expect a self-healing restart or two before it
+settles (`restart: always` retries automatically).
+
 ## Example Query
 
 ```
