@@ -1,0 +1,82 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: cmip_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: cmip
+      POSTGRES_PASSWORD: cmip123
+      POSTGRES_DB: cmip
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    command: >
+      postgres -c shared_preload_libraries=pgvector
+
+  adminer:
+    image: adminer
+    container_name: cmip_adminer
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+
+  qdrant:
+    image: qdrant/qdrant
+    container_name: cmip_qdrant
+    restart: always
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:latest
+    container_name: cmip_mlflow
+    restart: always
+    ports:
+      - "5001:5000"
+    volumes:
+      - mlflow_data:/mlflow
+    command: >
+      mlflow server
+      --backend-store-uri sqlite:///mlflow.db
+      --default-artifact-root /mlflow
+
+  # fastapi:
+  #   build: ./api
+  #   container_name: cmip_fastapi
+  #   restart: always
+  #   ports:
+  #     - "8000:8000"
+  #   depends_on:
+  #     - postgres
+  #     - qdrant
+  #   environment:
+  #     DATABASE_URL: postgres://cmip:cmip123@postgres:5432/cmip
+  #     QDRANT_URL: http://qdrant:6333
+
+  minio:
+    image: minio/minio
+    container_name: cmip_minio
+    restart: always
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: cmip
+      MINIO_ROOT_PASSWORD: cmip123
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+
+volumes:
+  postgres_data:
+  qdrant_data:
+  mlflow_data:
+  minio_data:
+

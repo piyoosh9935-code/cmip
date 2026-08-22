@@ -1,0 +1,36 @@
+# Python
+.venv/
+ingestion/dbt_project/.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# dbt
+ingestion/dbt_project/target/
+ingestion/dbt_project/dbt_packages/
+ingestion/dbt_project/logs/
+
+# env / secrets
+.env
+*.local
+
+# generated data (synthetic, regenerable)
+ingestion/bronze_silver_gold/raw/*
+!ingestion/bronze_silver_gold/raw/.gitkeep
+
+# node / frontend
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+
+# ML / embeddings caches
+.cache/
+**/__pycache__/
+
+# OS
+.DS_Store
+
+# docker volumes if ever bind-mounted locally
+docker/*/data/

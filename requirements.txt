@@ -1,0 +1,43 @@
+# Shared python3.12 venv for: retrieval/, langgraph/, mcp/, model_routing/, llmops/, api/,
+# ingestion/postgres/ (loader) and ingestion/synthetic_data_gen/.
+# dbt has its OWN isolated venv (ingestion/dbt_project/requirements.txt) — its jinja2/click/
+# protobuf pins routinely conflict with the LangChain ecosystem's, so we don't fight that here.
+#
+# Versions capped by major version, not floated to "latest", per the risk flagged in the
+# build plan (langchain/langgraph/mcp/mlflow all shipped major-version bumps in 2026).
+
+# --- agentic RAG core ---
+langchain>=1.0,<2.0
+langchain-core>=1.4,<2.0
+# langchain 1.x slimmed the main package down to agents/chat_models/embeddings/messages/
+# tools; retrievers (incl. EnsembleRetriever) moved to langchain-classic.
+langchain-classic>=1.0,<2.0
+langgraph>=1.2,<2.0
+langchain-ollama>=1.0,<2.0
+
+# --- retrieval ---
+qdrant-client>=1.18,<2.0
+rank-bm25>=0.2,<0.3
+sentence-transformers>=3.0,<4.0
+
+# --- MCP server/client ---
+mcp>=2.0,<3.0
+
+# --- data / db ---
+sqlalchemy>=2.0,<3.0
+psycopg2-binary>=2.9,<3.0
+pandas>=2.2,<3.0
+numpy>=1.26,<3.0
+faker>=25.0,<31.0
+
+# --- observability ---
+mlflow>=3.15,<4.0
+# langsmith SDK ships as a transitive dep of langchain-core; kept opt-in via env vars,
+# never imported/initialized unless LANGCHAIN_TRACING_V2=true (see llmops/langsmith/tracing.py)
+
+# --- api ---
+fastapi>=0.115,<1.0
+uvicorn[standard]>=0.30,<1.0
+pydantic>=2.7,<3.0
+python-dotenv>=1.0,<2.0
+httpx>=0.27,<1.0
