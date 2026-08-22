@@ -50,10 +50,19 @@ services:
       - "5001:5000"
     volumes:
       - mlflow_data:/mlflow
+    # --host 0.0.0.0 is required: MLflow 3.x's server defaults to binding 127.0.0.1
+    # inside the container for security, which Docker's port mapping can't reach at
+    # all (it forwards to the container's network interface, not its loopback).
+    # --artifacts-destination (not --default-artifact-root): the client logging
+    # artifacts runs on the host, not inside this container, so artifact URIs must use
+    # MLflow's proxied "mlflow-artifacts:/" scheme (routed through this server's HTTP
+    # API) rather than a literal filesystem path the client can't actually reach - see
+    # CHALLENGES.md.
     command: >
       mlflow server
+      --host 0.0.0.0
       --backend-store-uri sqlite:///mlflow.db
-      --default-artifact-root /mlflow
+      --artifacts-destination /mlflow
 
   # fastapi:
   #   build: ./api

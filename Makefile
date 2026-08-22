@@ -37,6 +37,13 @@ ingest-bm25:
 mcp-server:
 	$(PY) -m mcp_server.server
 
+# Phase 5
+golden-qa:
+	$(PY) tests/eval/generate_golden_qa.py
+
+eval:
+	$(PY) -m llmops.mlflow.run_eval
+
 # Phase 6
 api:
 	$(PY) -m uvicorn api.fastapi_app:app --reload --port 8000

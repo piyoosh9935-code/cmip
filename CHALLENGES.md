@@ -229,6 +229,58 @@ wiring) is solid and independently tested; the unreliable part is specifically s
 local models' multi-step reasoning, which is a model-capability limit, not a wiring
 bug - worth being precise about the difference in an interview.
 
+## Phase 5 — MLflow Logging + Eval Set
+
+**MLflow 3.x's server binds to `127.0.0.1` inside the container by default - a new
+security default that silently breaks Docker port forwarding.** `docker compose up -d
+mlflow` started cleanly and looked healthy in its own logs, but the container's
+`mlflow server` process was listening on its own loopback interface, which Docker's
+`ports: ["5001:5000"]` mapping forwards *to* the container's network interface, not
+into its loopback - so nothing outside the container could ever reach it, with no
+error on either side to point at why. **Fix**: added `--host 0.0.0.0` to the compose
+command, matching what MLflow's own CLI help text calls out under "Exposed beyond
+LAN." A reminder that a healthy-looking container log doesn't mean the port mapping
+around it actually works - worth an explicit `curl` from outside the container as part
+of the verification step, not just checking the container's own log output.
+
+**Artifact logging failed with `Read-only file system: '/mlflow'` - the exact minio/S3
+gap the plan had already flagged for Phase 8, just discovered earlier than expected.**
+`mlflow.log_param`/`log_metric` worked fine (they go over the tracking HTTP API), but
+`mlflow.log_dict(...)` (used to persist each run's full pipeline trace as an artifact)
+tried to write directly to the literal path `/mlflow/...` - which exists inside the
+mlflow container, not on the host machine actually running this Python client. Root
+cause: the compose command used `--default-artifact-root /mlflow`, a bare filesystem
+path, which makes MLflow hand every experiment a literal `/mlflow/...` artifact URI
+that only a co-located (or volume-shared) client can write to - the wrong assumption
+for a client running on the host talking to a server in a container. **Fix**: switched
+to `--artifacts-destination /mlflow` instead (MLflow's own artifact-serving *proxy*
+target, distinct from `--default-artifact-root`) with `--serve-artifacts` left at its
+default-on state, so new experiments get the proxied `mlflow-artifacts:/` scheme and
+every artifact read/write is routed through the tracking server's HTTP API instead of
+requiring direct filesystem access. Verified both directions explicitly (not just "no
+exception raised"): logged a trace artifact from the host, then used
+`MlflowClient.download_artifacts` to pull it back and confirmed the content matched.
+This also meant wiping the `mlflow_data` volume, since the experiment created under the
+old (broken) config had its bad artifact root baked into its metadata permanently -
+not something a server restart alone fixes, only acceptable here because it was dev
+data from earlier in the same session, not anything worth preserving.
+
+**Ground truth for precision@k/recall@k comes from the synthetic generator's own
+cohort assignment, not hand-labeling.** For a real clinical corpus, "is this note
+relevant to this question" is a judgment call needing a human or an LLM judge. Here,
+the synthetic data generator (`ingestion/synthetic_data_gen/notes.py`) already stamps
+every note with an unambiguous `cohort_tag` at creation time - so `tests/eval/
+golden_qa.jsonl` (generated deterministically by
+`tests/eval/generate_golden_qa.py`, not hand-authored) uses "does this note's
+cohort_tag match the cohort the eval question is about" as ground truth. This is a
+legitimate methodology specifically *because* the corpus is synthetic and the labels
+are generated, not inferred - worth stating plainly rather than implying it's
+equivalent to hand-labeled real clinical text. Result against the current corpus:
+avg precision@5 = 0.976, avg recall@5 = 0.962 across 25 questions spanning all 5
+cohorts - strong, but expected, since cohort-scoped questions on cohort-tagged
+synthetic notes is close to retrieval's easiest case; a genuinely adversarial eval set
+(ambiguous or cross-cohort questions) would be a natural next iteration.
+
 ---
 
-*(Phase 5 onward will be appended here as it's built.)*
+*(Phase 6 onward will be appended here as it's built.)*

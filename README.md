@@ -141,9 +141,13 @@ directly, used by the main graph) and an agentic MCP path for multi-hop question
 
 ## Observability
 
-**MLflow** (always on): one run per query, logging routed model + reason, retrieval
-weights, retry count, precision@k/recall@k against a hand-labeled eval set, groundedness
-score, and per-node latency.
+**MLflow** (always on, `http://localhost:5001`): `llmops/mlflow/experiment.py`
+logs one run per pipeline query - routed model + reason, retrieval weights, retry
+count, groundedness score, citation count, per-run trace artifact. Retrieval quality
+specifically is evaluated separately via `make golden-qa` (regenerates
+`tests/eval/golden_qa.jsonl` deterministically from the synthetic cohort ground truth
+already in Postgres) and `make eval` (runs all 25 questions through the hybrid
+retriever, logs precision@k/recall@k per question to MLflow, prints averages).
 
 ## Tracing
 
@@ -226,8 +230,8 @@ behind it, not just a "what."
 | 2 | Qdrant + BM25 + ensemble retrieval | ✅ done |
 | 3 | LangGraph Self-RAG/Corrective-RAG pipeline | ✅ done |
 | 4 | MCP server + router agent | ✅ done |
-| 5 | MLflow logging + eval set (heuristic routing itself was pulled forward into Phase 3 - `query_analysis` needed it) | ⏳ next |
-| 6 | FastAPI service | not started |
+| 5 | MLflow logging + eval set (heuristic routing itself was pulled forward into Phase 3 - `query_analysis` needed it) | ✅ done |
+| 6 | FastAPI service | ⏳ next |
 | 7 | Next.js Member 360 frontend | not started |
 | 8 | Full Docker Compose integration + e2e test | not started |
 

@@ -1,0 +1,25 @@
+{"member_id": "M-00003", "cohort": "diabetes", "question": "Tell me about this member's diabetes management and blood sugar control.", "expected_relevant_note_count": 2}
+{"member_id": "M-00005", "cohort": "diabetes", "question": "Tell me about this member's diabetes management and blood sugar control.", "expected_relevant_note_count": 2}
+{"member_id": "M-00009", "cohort": "diabetes", "question": "Tell me about this member's diabetes management and blood sugar control.", "expected_relevant_note_count": 3}
+{"member_id": "M-00010", "cohort": "diabetes", "question": "Tell me about this member's diabetes management and blood sugar control.", "expected_relevant_note_count": 5}
+{"member_id": "M-00011", "cohort": "diabetes", "question": "Tell me about this member's diabetes management and blood sugar control.", "expected_relevant_note_count": 4}
+{"member_id": "M-00000", "cohort": "hypertension", "question": "How is this member's blood pressure and hypertension being managed?", "expected_relevant_note_count": 3}
+{"member_id": "M-00002", "cohort": "hypertension", "question": "How is this member's blood pressure and hypertension being managed?", "expected_relevant_note_count": 3}
+{"member_id": "M-00004", "cohort": "hypertension", "question": "How is this member's blood pressure and hypertension being managed?", "expected_relevant_note_count": 3}
+{"member_id": "M-00006", "cohort": "hypertension", "question": "How is this member's blood pressure and hypertension being managed?", "expected_relevant_note_count": 5}
+{"member_id": "M-00008", "cohort": "hypertension", "question": "How is this member's blood pressure and hypertension being managed?", "expected_relevant_note_count": 5}
+{"member_id": "M-00015", "cohort": "chf", "question": "What is this member's heart failure status and treatment?", "expected_relevant_note_count": 2}
+{"member_id": "M-00016", "cohort": "chf", "question": "What is this member's heart failure status and treatment?", "expected_relevant_note_count": 5}
+{"member_id": "M-00017", "cohort": "chf", "question": "What is this member's heart failure status and treatment?", "expected_relevant_note_count": 3}
+{"member_id": "M-00018", "cohort": "chf", "question": "What is this member's heart failure status and treatment?", "expected_relevant_note_count": 5}
+{"member_id": "M-00033", "cohort": "chf", "question": "What is this member's heart failure status and treatment?", "expected_relevant_note_count": 3}
+{"member_id": "M-00007", "cohort": "copd", "question": "Summarize this member's COPD symptoms and respiratory treatment.", "expected_relevant_note_count": 4}
+{"member_id": "M-00021", "cohort": "copd", "question": "Summarize this member's COPD symptoms and respiratory treatment.", "expected_relevant_note_count": 5}
+{"member_id": "M-00042", "cohort": "copd", "question": "Summarize this member's COPD symptoms and respiratory treatment.", "expected_relevant_note_count": 3}
+{"member_id": "M-00047", "cohort": "copd", "question": "Summarize this member's COPD symptoms and respiratory treatment.", "expected_relevant_note_count": 2}
+{"member_id": "M-00058", "cohort": "copd", "question": "Summarize this member's COPD symptoms and respiratory treatment.", "expected_relevant_note_count": 6}
+{"member_id": "M-00001", "cohort": "depression", "question": "How is this member doing with their depression and mental health treatment?", "expected_relevant_note_count": 5}
+{"member_id": "M-00004", "cohort": "depression", "question": "How is this member doing with their depression and mental health treatment?", "expected_relevant_note_count": 7}
+{"member_id": "M-00012", "cohort": "depression", "question": "How is this member doing with their depression and mental health treatment?", "expected_relevant_note_count": 3}
+{"member_id": "M-00025", "cohort": "depression", "question": "How is this member doing with their depression and mental health treatment?", "expected_relevant_note_count": 5}
+{"member_id": "M-00038", "cohort": "depression", "question": "How is this member doing with their depression and mental health treatment?", "expected_relevant_note_count": 2}
