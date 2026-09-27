@@ -1,0 +1,33 @@
+# Healthcare integration sandbox for the Healthcare Domain Prep labs.
+# Runs alongside the main stack:  make hc-up   (or: docker compose -f docker-compose.yml -f docker-compose.healthcare.yml up -d)
+# Synthetic data only - never load real PHI into this sandbox.
+
+services:
+  hapi-fhir:
+    # HAPI FHIR JPA server (FHIR R4) - used for FHIR, Patient Access API and prior-auth labs.
+    image: hapiproject/hapi:latest
+    container_name: cmip_hapi_fhir
+    restart: unless-stopped
+    ports:
+      - "8090:8080"          # http://localhost:8090/fhir  (8080 is taken by adminer)
+    environment:
+      hapi.fhir.fhir_version: R4
+    volumes:
+      - hapi_data:/data/hapi
+
+  oie:
+    # Open Integration Engine: the open-source fork of Mirth Connect (Mirth went closed-source in 2025).
+    # Used for HL7 v2 ADT / interface-engine labs.
+    image: openintegrationengine/engine:latest
+    container_name: cmip_oie
+    restart: unless-stopped
+    ports:
+      - "8443:8443"          # admin (HTTPS) - connect with the OIE Administrator launcher
+      - "8081:8080"          # http
+      - "6661:6661"          # MLLP listener for HL7 v2 messages
+    volumes:
+      - oie_appdata:/opt/engine/appdata
+
+volumes:
+  hapi_data:
+  oie_appdata:

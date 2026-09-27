@@ -37,3 +37,8 @@ retrieval/bm25/index/
 
 # docker volumes if ever bind-mounted locally
 docker/*/data/
+
+# healthcare labs: generated synthetic data and outputs (regenerable)
+learning/labs/**/output/
+learning/labs/**/synthea_output/
+learning/.pending

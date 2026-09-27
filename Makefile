@@ -1,4 +1,4 @@
-.PHONY: venv install dbt-venv data dbt-run dbt-test ingest-qdrant ingest-bm25 api ui up down test
+.PHONY: venv install dbt-venv data dbt-run dbt-test ingest-qdrant ingest-bm25 api ui up down test hc-up hc-down learn-push
 
 VENV := .venv
 PY := $(VENV)/bin/python
@@ -61,3 +61,16 @@ down:
 
 test:
 	$(VENV)/bin/pytest tests/ -v
+
+# Healthcare learning track
+HC_COMPOSE := docker compose -f docker-compose.yml -f docker-compose.healthcare.yml
+
+hc-up:
+	$(HC_COMPOSE) up -d hapi-fhir oie
+
+hc-down:
+	$(HC_COMPOSE) stop hapi-fhir oie
+
+# Commit + tag the day's session notes and lab code, then push to GitHub
+learn-push:
+	./learning/push.sh
